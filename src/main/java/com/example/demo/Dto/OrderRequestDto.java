@@ -1,0 +1,22 @@
+package com.example.demo.Dto;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class OrderRequestDto {
+
+    @NotNull
+    private Long userId;
+
+    @NotNull
+    private Long productId;
+
+    @Min(1)
+    private Integer quantity;
+
+
+}
