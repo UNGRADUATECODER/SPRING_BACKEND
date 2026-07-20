@@ -10,6 +10,9 @@ import com.example.demo.Exception.ProductNotFoundException;
 import com.example.demo.Repository.OrderRepository;
 import com.example.demo.Repository.ProductRepository;
 import com.example.demo.Repository.UserRepository;
+import com.example.demo.Security.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -23,21 +26,21 @@ public class OrderService {
     private final UserRepository userRepository;
 
     private final ProductRepository productRepository;
+    private final UserService userService;
 
-    public OrderService(OrderRepository orderRepository, UserRepository userRepository, ProductRepository productRepository) {
+
+    public OrderService(OrderRepository orderRepository, UserRepository userRepository, ProductRepository productRepository, UserService userService) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.userService = userService;
     }
-
-
 
     // Create
     public OrderResponseDto placeOrder(OrderRequestDto request) {
 
 
-              User user= userRepository.findById(request.getUserId()).orElseThrow(()->new RuntimeException("user not found"));
-
+        User loggedInUser = userService.getLoggedInUser();
         Product product=productRepository.findById(request.getProductId()).orElseThrow(()->new RuntimeException("product not found"));
 
          if(product.getStock()< request.getQuantity()){
@@ -48,7 +51,7 @@ public class OrderService {
         );
         productRepository.save(product);
         Order order = new Order();
-        order.setUser(user);
+        order.setUser(loggedInUser);
         order.setProduct(product);
         order.setQuantity(request.getQuantity());
         Order savedOrder =
@@ -68,9 +71,15 @@ public class OrderService {
         return response;
 
     }
-    public List<OrderResponseDto> getOrdersByUser(Long userId) {
+    public List<OrderResponseDto> getMyOrders() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
 
-        List<Order> orders = orderRepository.findByUserId(userId);
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        User user = userDetails.getUser();
+        List<Order> orders = orderRepository.findByUserId(user.getId());
 
         return orders.stream().map(order -> {
 
@@ -106,10 +115,13 @@ public class OrderService {
     }
     public OrderResponseDto updateOrder(Long id,
                                         OrderRequestDto request) {
-
+        User loggedInUser = userService.getLoggedInUser();
         Order order = orderRepository.findById(id)
                 .orElseThrow(() ->
                         new OrderNotFoundException("Order not found"));
+        if (!order.getUser().getId().equals(loggedInUser.getId())) {
+            throw new RuntimeException("You are not allowed to update this order");
+        }
 
         Product product = order.getProduct();
 
@@ -168,6 +180,13 @@ public class OrderService {
 
     // Delete
     public void delete(Long id) {
-        orderRepository.deleteById(id);
+
+        User loggedInUser = userService.getLoggedInUser();
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found"));
+        if (!order.getUser().getId().equals(loggedInUser.getId())) {
+            throw new RuntimeException("You are not allowed to delete this order");
+        }
+        orderRepository.delete(order);
     }
 }

@@ -1,8 +1,8 @@
 package com.example.demo.Entity;
 
 
+import com.example.demo.Enum.Role;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import io.micrometer.jakarta9.instrument.mail.DefaultMailSendObservationConvention;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.IdGeneratorType;
@@ -22,9 +22,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
    private String username;
+    @Column(unique = true)
    private String email;
    private String password;
-   private String role;
+   @Enumerated(EnumType.STRING)
+   private Role role;
     @JsonManagedReference
    @OneToMany(mappedBy = "user",cascade = CascadeType.ALL)
    private List<Order> orders;

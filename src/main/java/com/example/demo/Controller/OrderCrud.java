@@ -24,6 +24,10 @@ public class OrderCrud {
     public OrderResponseDto placeOrder(@RequestBody OrderRequestDto request) {
         return orderService.placeOrder(request);
     }
+    @GetMapping("/my-orders")
+    public List<OrderResponseDto> getMyOrders() {
+        return orderService.getMyOrders();
+    }
 
     // Get All
     @GetMapping
@@ -36,12 +40,7 @@ public class OrderCrud {
     public Order getById(@PathVariable Long id) {
         return orderService.getById(id);
     }
-    @GetMapping("/user/{userId}")
-    public List<OrderResponseDto> getOrdersByUser(
-            @PathVariable Long userId) {
 
-        return orderService.getOrdersByUser(userId);
-    }
     @GetMapping("/product/{productId}")
     public List<OrderResponseDto> getOrdersByProduct(
             @PathVariable Long productId) {

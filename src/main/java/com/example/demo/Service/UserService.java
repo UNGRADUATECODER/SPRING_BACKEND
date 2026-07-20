@@ -3,9 +3,14 @@ package com.example.demo.Service;
 import com.example.demo.Dto.*;
 import com.example.demo.Entity.Order;
 import com.example.demo.Entity.User;
+import com.example.demo.Enum.Role;
 import com.example.demo.Exception.UserNotFoundException;
 import com.example.demo.Repository.OrderRepository;
 import com.example.demo.Repository.UserRepository;
+import com.example.demo.Security.CustomUserDetails;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,21 +19,21 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepository;
     private  final OrderRepository orderRepository;
-    public UserService(UserRepository userRepository, OrderRepository orderRepository) {
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository, OrderRepository orderRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
+        this.passwordEncoder = passwordEncoder;
     }
-
-
-
 
     public  UserResponseDto Create(UserRequestDto request){
 
         User user=new User();
        user.setUsername(request.getUsername());
        user.setEmail(request.getEmail());
-       user.setPassword(request.getPassword());
-       user.setRole(request.getRole());
+       user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.USER);
        User savedUser=userRepository.save(user);
 
        UserResponseDto userResponseDto=new UserResponseDto();
@@ -107,4 +112,34 @@ dto.setEmail(users.getEmail());
 
         userRepository.deleteById(id);
     }
+
+    public UserResponseDto getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+
+        User user = userDetails.getUser();
+
+        UserResponseDto dto = new UserResponseDto();
+
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setRole(user.getRole());
+
+        return dto;
+    }public User getLoggedInUser() {
+        // SecurityContextHolder se current user return karega
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        CustomUserDetails userDetails =
+                (CustomUserDetails) authentication.getPrincipal();
+        return userDetails.getUser();
+    }
+
+
 }

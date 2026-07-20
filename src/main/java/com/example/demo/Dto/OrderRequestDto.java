@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 public class OrderRequestDto {
 
-    @NotNull
-    private Long userId;
+
 
     @NotNull
     private Long productId;
